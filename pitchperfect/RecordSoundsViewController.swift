@@ -9,11 +9,11 @@
 import UIKit
 import AVFoundation
 
-class RecordSoundsViewController: UIViewController {
+class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     
     // Audio
     var audioRecorder: AVAudioRecorder!
-
+    
     // View
     @IBOutlet weak var recordingLabel: UILabel!
     @IBOutlet weak var recordButton: UIButton!
@@ -28,7 +28,7 @@ class RecordSoundsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
     }
-
+    
     @IBAction func recordAudio(_ sender: Any) {
         recordingLabel.text = "Recording in progress"
         stopRecordingButton.isEnabled = true
@@ -43,6 +43,7 @@ class RecordSoundsViewController: UIViewController {
         try! session.setCategory(AVAudioSessionCategoryPlayAndRecord, with:AVAudioSessionCategoryOptions.defaultToSpeaker)
         
         try! audioRecorder = AVAudioRecorder(url: filePath!, settings: [:])
+        audioRecorder.delegate = self;
         audioRecorder.isMeteringEnabled = true
         audioRecorder.prepareToRecord()
         audioRecorder.record()
@@ -54,8 +55,24 @@ class RecordSoundsViewController: UIViewController {
         recordButton.isEnabled = true
         
         audioRecorder.stop();
-        let audioSession = AVAudioSession.sharedInstance();
-        try! audioSession.setActive(false);
+        let audioSession = AVAudioSession.sharedInstance()
+        try! audioSession.setActive(false)
+    }
+    
+    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        if flag {
+            performSegue(withIdentifier: "stopRecording", sender: audioRecorder.url)
+        } else {
+            print("Failed to record")
+        }
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "stopRecording" {
+            let playSoundsVC = segue.destination as! PlaySoundsViewController
+            let recordedAudioUrl = sender as! URL
+            playSoundsVC.recordedAudioUrl = recordedAudioUrl
+        }
     }
 }
 
